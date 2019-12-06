@@ -1,0 +1,1047 @@
+% R Workshop Presentation
+
+\documentclass{beamer}
+
+\mode<presentation>{
+
+\usetheme{AnnArbor}
+\usecolortheme{beaver}
+
+\setbeamercolor{title}{bg=gray!10!white}
+\setbeamertemplate{itemize item}{\color{darkred}$\blacksquare$}
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc}
+\usepackage{setspace}
+\usepackage{color}
+\usepackage{listings}
+}
+
+\AtBeginSection[]{
+  \begin{frame}
+  \vfill
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+    \usebeamerfont{title}\insertsectionhead\par%
+  \end{beamercolorbox}
+  \vfill
+  \end{frame}
+}
+
+\title[R Workshop]{Data manipulation and visualisation with R}
+% The short title appears at the bottom of every slide
+
+\author[RS-eco]{RS-eco} % Your name
+\institute[TUM]
+{Biodiversity \& Global Change Lab\\Technical University of Munich, Germany \\ \vspace{2ex}
+\href{mailto:rs-eco@posteo.de}{rs-eco@posteo.de}}
+\date{08th April 2019} % Date, can be changed to a custom date
+
+\begin{document}
+\begin{frame}
+\titlepage % Print the title page as the first slide
+\end{frame}
+
+\section{Piping with magrittr}
+\subsection{Common practice} 
+\begin{frame}[fragile]
+\frametitle{The common way of coding in R}
+<<>>=
+mean_length <- mean(iris$Sepal.Length)
+sub_iris <- subset(iris, Sepal.Length > mean_length)
+cor_iris <- cor(sub_iris$Sepal.Length, 
+                sub_iris$Sepal.Width)
+cor_iris
+@
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Piping} 
+\begin{frame}[fragile]
+\frametitle{The new way of coding in R}
+
+<<echo=FALSE>>=
+library(magrittr)
+@
+
+<<>>=
+iris %>%
+  subset(Sepal.Length > mean(Sepal.Length)) %$%
+  cor(Sepal.Length, Sepal.Width)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{magrittr - Pipes}
+The forward-pipe operator, \textbf{\%>\%} can be used to replace f(x) with x \%>\% f or f(x,y) with x \%>\% f(y).
+
+<<eval=F>>=
+# Normal way
+rnorm(5)
+
+# Using piping
+
+# With round brackets
+5 %>% rnorm()
+
+# Or without round brackets
+5 %>% rnorm
+@
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{magrittr - Pipes}
+The compound assignment pipe-operator, \textbf{\%<>\%} can be used whenever expr <- ... makes sense, e.g.
+
+<<eval=F>>=
+# Normal way
+x <- rnorm(5)
+x <- sort(x)
+
+# Using piping
+x <- rnorm(5)
+x %<>% sort
+@
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{magrittr - Pipes}
+
+The "tee" operator, \textbf{\%T>\%} works like \textbf{\%>\%}, except it returns the left-hand side value, and not the result of the right-hand side operation. This is useful when a step in a pipeline is used for its side-effect (printing, plotting, logging, etc.). As an example (where the actual plot is omitted here):
+
+<<eval=F>>=
+rnorm(200) %>%
+matrix(ncol = 2) %T>%
+plot %>% # plot usually does not return anything. 
+colSums
+@
+
+\textbf{Note:} Pipe operators can never stand at the beginning of a line.
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{magrittr - Pipes}
+
+The "exposition" pipe operator, \textbf{\%\$\%} exposes the names within the left-hand side object to the right-hand side expression. This operator is handy when functions do not themselves have a data argument:
+
+<<eval=F>>=
+# Normal way
+cor(iris$Sepal.Length, iris$Sepal.Width)
+
+# Using piping
+iris %$% cor(Sepal.Length, Sepal.Width)
+@
+
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Exercise 1}
+\begin{frame}[fragile]
+\frametitle{Do it yourself - Exercise 1}
+\begin{itemize}
+\item Install and load the \textbf{magrittr} package 
+\item Turn the following code into a streamlined version using piping:
+\end{itemize}
+<<eval=F>>=
+mean_width <- mean(iris$Sepal.Width)
+iris_sub <- subset(iris, Sepal.Width < mean_width)
+plot(iris_sub)
+cor_iris_sub <- cor(iris_sub$Sepal.Length, 
+                    iris_sub$Sepal.Width)
+@
+\end{frame}
+
+%------------------------------------------------
+\section{Data import with readr}
+%------------------------------------------------
+
+\subsection{base}
+\begin{frame}
+\frametitle{Read and write data}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=560 112 31 500, clip, scale=0.7]{cheatsheets/base-r-cheatsheet}}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+%What are tibbles???
+
+\subsection{readr}
+\begin{frame}
+\frametitle{readr - Read functions}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=300 413 300 57, clip, scale=0.55]{cheatsheets/data-import-cheatsheet} }
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{readr - Read arguments}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=300 195 300 450, clip, scale=0.7]{cheatsheets/data-import-cheatsheet} }
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{readr - Write functions}
+Save \textbf{x}, an R object, to \textbf{path}, a filepath, with:
+\begin{figure}
+    \centering
+    \begin{minipage}{0.5\textwidth}
+        \centering
+       \makebox[\textwidth]{
+\includegraphics[trim=32 210 830 495, clip, scale=0.7]{cheatsheets/data-import-cheatsheet}} 
+\end{minipage}\hfill
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \makebox[\textwidth]{
+\includegraphics[trim=32 45 830 640, clip, scale=0.7]{cheatsheets/data-import-cheatsheet}}
+\end{minipage}
+\end{figure}
+\textbf{write\_csv()} can save compressed files, just add the compression type to the file ending (i.e. species\_info.csv.xz). The compressed files can be directly read into R, using \textbf{read.csv()} and \textbf{read\_csv()}.
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Data formats}
+\begin{frame}
+\frametitle{Other types of data}
+The following packages can be used to import other types of files:
+\vspace{2ex}
+\begin{itemize}
+\item \textbf{haven} - SPSS, Stata and SAS files
+\item \textbf{readxl} - excel files (.xls and .xlsx)
+\item \textbf{dplyr} - databases
+\item \textbf{jsonlite} - json
+\item \textbf{xml2} - XML
+\item \textbf{httr} - Web APIs
+\item \textbf{rvest} - HTML (Web Scraping)
+\item \textbf{raster, stars} - raster files (.nc, .ascii, .tif)
+\item \textbf{rgdal, sf} - vector files (.shp)
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Exercise 2}
+\begin{frame}
+\frametitle{Do it yourself - Exercise 2}
+\begin{itemize}
+\item Install and load the \textbf{readr} package 
+\item Read the species\_info.csv.xz file into R
+\item Read only the first 10 rows of your data into R
+\item Read the last 10 rows of your data into R
+\item Check the structure and class of your object 
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\section{Data handling with tidyr}
+%------------------------------------------------
+
+\subsection{Tidy Data}
+\begin{frame}
+\frametitle{Tidy Data with tidyr}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=290 672 285 47, clip, scale=0.7]{cheatsheets/data-import-cheatsheet}
+}
+\end{figure}
+Is species\_info.csv.xz tidy?
+\end{frame}
+
+\subsection{Data layout}
+\begin{frame}
+\frametitle{Data layout}
+tidy data typically comes in one of two layouts: \\ \vspace{3ex}
+\hspace{8ex} A \textbf{wide table} \hspace{12ex} or\hspace{12ex} a \textbf{long table}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=220 430 490 340, clip, scale=1.6]{cheatsheets/data-import-cheatsheet}%Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+\subsection{Reshape data}
+\begin{frame}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=296 327 290 180, clip, scale=0.7]{cheatsheets/data-import-cheatsheet}
+}
+\end{figure}
+\end{frame}
+
+\subsection{Missing values}
+\begin{frame}
+\frametitle{tidyr - Handle missing values}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=296 152 290 530, clip, scale=0.7]{cheatsheets/data-import-cheatsheet}
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Expand tables}
+\begin{frame}
+\frametitle{tidyr - Expand tables}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=296 50 290 705, clip, scale=0.7]{cheatsheets/data-import-cheatsheet}
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Manipulate cells}
+\begin{frame}
+\frametitle{tidyr - Split and combine cells}
+Use these functions to split or combine cells into individual, isolated values
+\begin{figure}
+    \centering
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[page=2, trim=825 510 35 110, clip, scale=0.7]{cheatsheets/data-import-cheatsheet}
+\end{minipage}\hfill
+%    \begin{minipage}{0.33\textwidth}
+%        \centering
+%        \includegraphics[page=2, trim=825 240 35 350, clip, scale=0.45]{cheatsheets%/data-import-cheatsheet}
+%\end{minipage}
+\begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[page=2, trim=825 45 35 620, clip, scale=0.7]{cheatsheets/data-import-cheatsheet}
+\end{minipage}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Exercise 3}
+\begin{frame}
+\frametitle{Do it yourself - Exercise 3}
+Using the smallest amount of code:
+\vspace{2ex}
+\begin{itemize}
+\item Install and load the \textbf{tidyr} package
+\item Replace NAs in presence, origin and season with 0s
+\item Complete species\_info by binomial, presence, origin and season
+\item Drop missing values from species\_info
+\item Separate binomial into genus and species, but keep binomial
+\item Read species\_data.csv.xz into R
+\item Turn species\_data from wide into long format and drop missing values
+\item Turn species\_data back into wide format
+\end{itemize}
+\vspace{2ex}
+Don't forget to use pipes
+\end{frame}
+
+%------------------------------------------------
+\section{Data transformation with dplyr}
+%------------------------------------------------
+
+\subsection{Summarise cases}
+\begin{frame}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=5 300 730 235, clip, scale=0.8]{cheatsheets/data-transformation-cheatsheet}
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{dplyr - Summarise functions}
+\textbf{summarise()} applies summary functions to columns to create a new table. Summary functions take vectors as input and return single values as output.
+\begin{figure}
+\centering
+    \begin{minipage}{0.5\textwidth}
+        \centering
+\makebox[\textwidth]{\includegraphics[page=2, trim=297 485 565 130, clip, scale=0.7]{cheatsheets/data-transformation-cheatsheet} % Left, bottom, right, top
+}
+\end{minipage}\hfill
+   \begin{minipage}{0.5\textwidth}
+       \centering
+      \includegraphics[page=2, trim=297 270 565 360, clip, scale=0.7]{cheatsheets/data-transformation-cheatsheet} % Left, bottom, right, top
+\end{minipage}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{dplyr - Group cases}
+\begin{frame}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=0 35 730 550, clip, scale=0.75]{cheatsheets/data-transformation-cheatsheet} % Left, bottom, right, top
+}\\
+\vspace{2ex}
+\textbf{Note:} group\_by() can be used with multiple variables, i.e. group\_by(x,y).
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Manipulate cases}
+\begin{frame}
+\frametitle{dplyr - Extract cases}
+Extract certain rows of your data.frame using filter()
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=382 670 382 115, clip, scale=1]{cheatsheets/data-transformation-cheatsheet} % Left, bottom, right, top
+}
+
+You can use filter() with logical operators (>, <, >=, <=), is.na(), !is.na() or boolean operators.
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{Boolean operators}
+\begin{figure}
+%Can be used with filter()
+\makebox[\textwidth]{
+\includegraphics{figures/transform-logical} % Left, bottom, right, top
+}
+\end{figure}
+Also check out \textbf{\%in\%}, the best operator ever!!!
+\end{frame}
+%What about logical operators
+
+%------------------------------------------------
+
+\subsection{Manipulate cases}
+\begin{frame}
+\frametitle{dplyr - Extract cases}
+Row functions return a subset of rows as a new table.
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=382 450 382 170, clip, scale=0.85]{cheatsheets/data-transformation-cheatsheet} % Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Manipulate cases}
+\begin{frame}
+\frametitle{dplyr - Extract cases II}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=382 340 382 390, clip, scale=1]{cheatsheets/data-transformation-cheatsheet}}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=375 30 375 590, clip, scale=1]{cheatsheets/data-transformation-cheatsheet} % Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Manipulate Variables}
+\begin{frame}
+\frametitle{dplyr - Extract Variables}
+Column functions return a set of columns as a new table. \vspace{2ex}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=755 600 30 120, clip, scale=1]{cheatsheets/data-transformation-cheatsheet}
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{dplyr - Make New Variables}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=755 330 30 285, clip, scale=0.9]{cheatsheets/data-transformation-cheatsheet} % Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=755 45 30 525, clip, scale=0.85]{cheatsheets/data-transformation-cheatsheet} % Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{dplyr - Vectorized functions}
+\textbf{mutate()} and \textbf{transmute()} apply vectorized functions to columns to create new columns. Vectorized functions take vectors as input and
+return vectors of the same length as output.
+\begin{figure}
+\centering
+    \begin{minipage}{0.5\textwidth}
+        \centering
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=30 460 860 140, clip, scale=0.7]{cheatsheets/data-transformation-cheatsheet}}
+\end{minipage}\hfill
+   \begin{minipage}{0.5\textwidth}
+       \centering
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=30 240 833 390, clip, scale=0.7]{cheatsheets/data-transformation-cheatsheet}}
+\end{minipage}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Exercise 4}
+\begin{frame}
+\frametitle{Do it yourself - Exercise 4}
+Using pipes:
+\vspace{2ex}
+\begin{itemize}
+\item Calculate the number of occurrences per species
+\item Arrange data by the number of occurrences per species
+\item Identify all species with less than 10 occurrences
+\item Calculate the number of species per grid cell
+\item Extract data for five species using \%in\%
+\item Extract data for all species starting with "Ac"
+\item Calculate the number of species per class in species\_info and output as table using the \textbf{kable()} function of the \textbf{knitr} package
+\end{itemize}
+\vspace{2ex}
+\end{frame}
+
+%------------------------------------------------
+\section{Data transformation with dplyr - Part II}
+%------------------------------------------------
+
+\subsection{Combine tables}
+\begin{frame}
+\frametitle{dplyr - Combine variables}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=565 630 290 75, clip, scale=1.1]{cheatsheets/data-transformation-cheatsheet}} % Left, bottom, right, top
+\end{figure}
+\textbf{bind\_cols()} also works with many (>2) data frames, and is an efficient implementation of \textbf{do.call(cbind, dfs)}.
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{dplyr - Combine cases}
+\begin{figure}
+\centering
+    \begin{minipage}{0.5\textwidth}
+        \centering
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=830 540 30 75, clip, scale=0.7]{cheatsheets/data-transformation-cheatsheet}}
+\end{minipage}\hfill
+\begin{minipage}{0.5\textwidth}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=830 330 30 310, clip, scale=0.7]{cheatsheets/data-transformation-cheatsheet}}
+\end{minipage}
+\end{figure}
+\textbf{bind\_rows()} also works with many (>2) data frames, and is an efficient implementation of \textbf{do.call(rbind, dfs)}.
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{dplyr - Mutating Join}
+Use a "Mutating Join" to join one table to columns from another, matching values with the rows that they correspond to. Each join retains a different
+combination of values from the tables.
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=570 420 300 300, clip, scale=1]{cheatsheets/data-transformation-cheatsheet} % Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{dplyr - Mutating Join II}
+Use a "Mutating Join" to join one table to columns from another, matching values with the rows that they correspond to. Each join retains a different
+combination of values from the tables.
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=570 280 300 440, clip, scale=1]{cheatsheets/data-transformation-cheatsheet}}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}[fragile]
+\frametitle{dplyr - Mutating Join III}
+\begin{figure}
+\includegraphics[page=2, trim=570 120 288 590, clip, scale=0.9]{cheatsheets/data-transformation-cheatsheet}
+\end{figure}
+But what, if you want to join a list of data frames?
+
+<<eval=F>>=
+# Combine dplyr join commands, with Reduce
+Reduce(function(...) dplyr::left_join(..., all.x=TRUE), dfs)
+@
+
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{dplyr - Extract rows}
+\begin{figure}
+\includegraphics[page=2, trim=830 48 30 570, clip, scale=0.9]{cheatsheets/data-transformation-cheatsheet}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Exercise 5}
+\begin{frame}
+\frametitle{Do it yourself - Exercise 5}
+Using pipes:
+\vspace{2ex}
+\begin{itemize}
+\item Join species\_data with species\_info
+\item Calculate the number of species per class in species\_data
+\item Calculate the number of species per grid cell for each class
+\item Identify the most widely distributed species for each class
+\end{itemize}
+\vspace{2ex}
+\end{frame}
+
+%------------------------------------------------
+\section{Data visualization with ggplot2}
+%------------------------------------------------
+
+\subsection{Basics}
+\begin{frame}
+\frametitle{ggplot2 - Basics}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=15 405 825 190, clip, scale=0.8]{cheatsheets/ggplot2-cheatsheet}}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Basics}
+\begin{frame}
+\frametitle{ggplot2 - Basics II}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=15 180 825 445, clip, scale=0.9]{cheatsheets/ggplot2-cheatsheet}}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{One variable}
+\begin{frame}
+\frametitle{ggplot2 - One variable}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[trim=295 50 550 75, clip, scale=0.65]{cheatsheets/ggplot2-cheatsheet} % Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+%\subsection{One variable}
+%\begin{frame}
+%\frametitle{ggplot2 - Graphical Primitives}
+%\begin{figure}
+%\makebox[\textwidth]{
+%\includegraphics[trim=295 50 550 445, clip, scale=0.6]{cheatsheets/ggplot2-cheatsheet} % Left, bottom, right, top
+%}
+%\end{figure}
+%\end{frame}
+
+%------------------------------------------------
+
+\subsection{Two variables}
+\begin{frame}
+\frametitle{ggplot2 - Two variables}
+\begin{figure}
+\centering
+    \begin{minipage}{0.5\textwidth}
+        \centering
+\makebox[\textwidth]{
+\includegraphics[trim=560 465 287 70, clip, scale=0.6]{cheatsheets/ggplot2-cheatsheet} % Left, bottom, right, top
+}
+\end{minipage}\hfill
+\begin{minipage}{0.5\textwidth}
+\makebox[\textwidth]{
+\includegraphics[trim=815 470 45 70, clip, scale=0.6]{cheatsheets/ggplot2-cheatsheet} % Left, bottom, right, top
+}
+\end{minipage}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{ggplot2 - Two variables II}
+\begin{figure}
+\centering
+    \begin{minipage}{0.5\textwidth}
+        \centering
+\makebox[\textwidth]{
+\includegraphics[trim=560 153 300 410, clip, scale=0.6]{cheatsheets/ggplot2-cheatsheet}}
+\end{minipage}\hfill
+\begin{minipage}{0.5\textwidth}
+\makebox[\textwidth]{
+\includegraphics[trim=815 153 28 382, clip, scale=0.6]{cheatsheets/ggplot2-cheatsheet}}
+\end{minipage}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Scales}
+\begin{frame}
+\frametitle{ggplot2 - Scales}
+\textbf{Scales} control how a plot maps data values to the visual
+values of an aesthetic. To change the mapping, add a custom scale.
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=280 515 550 85, clip, scale=0.7]{cheatsheets/ggplot2-cheatsheet} % Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{ggplot2 - Scales II}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=280 40 550 650, clip, scale=1]{cheatsheets/ggplot2-cheatsheet} % Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Coordinate systems}
+\begin{frame}
+\frametitle{ggplot2 - Coordinate systems}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=561 465 285 50, clip, scale=0.65]{cheatsheets/ggplot2-cheatsheet} % Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Position adjustments}
+\begin{frame}
+\frametitle{Position adjustments}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=562 200 285 415, clip, scale=0.85]{cheatsheets/ggplot2-cheatsheet}}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Labels \& Legends}
+\begin{frame}
+\frametitle{Labels \& Legends}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=820 170 20 390, clip, scale=0.7]{cheatsheets/ggplot2-cheatsheet} % Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Themes}
+\begin{frame}
+\frametitle{Themes}
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=562 50 282 705, clip, scale=1]{cheatsheets/ggplot2-cheatsheet} % Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Faceting}
+\begin{frame}
+\frametitle{Faceting}
+Facets divide a plot into subplots based on the values of one or more discrete variables
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[page=2, trim=825 570 30 70, clip, scale=0.9]{cheatsheets/ggplot2-cheatsheet} % Left, bottom, right, top
+}
+\end{figure}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Patchwork}
+\begin{frame}[fragile]
+\frametitle{Patchwork}
+\textbf{patchwork} makes it easy to combine separate ggplots into the same graphic, just add plots together. \\
+\vspace{2ex}
+
+\textbf{patchwork} can be installed from Github with:
+
+<<eval=F>>=
+# install.packages("devtools")
+devtools::install_github("thomasp85/patchwork")
+@
+
+Create two plots
+
+<<warning=F>>=
+library(ggplot2); library(patchwork)
+
+p1 <- ggplot(mtcars) + geom_point(aes(mpg, disp))
+p2 <- ggplot(mtcars) + geom_boxplot(aes(gear, disp, group = gear))
+@
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Patchwork}
+Now, we can simply add the two plots together:
+
+<<fig.height=4, fig.width=10, fig.path="figures/">>=
+p1 + p2
+@
+\end{frame}
+
+\begin{frame}[fragile]
+plot\_layout() lets you define the dimensions of the grid:
+
+<<fig.height=4, fig.width=9, fig.path="figures/">>=
+p1 + p2 + plot_layout(ncol = 1, heights = c(2, 1))
+@
+
+For more feature, check out: https://github.com/thomasp85/patchwork
+\end{frame}
+
+\begin{frame}[fragile]
+
+\subsection{plotly}
+\frametitle{Interactive graphics - plotly}
+\textbf{plotly} provides an interface to create interactive web graphics via plotly.js (https://plot.ly/). \\
+\vspace{2ex}
+ggplot2 figures can be made interactive, using the function \textbf{ggplotly}:
+<<echo=T, eval=F, message=F, fig.height=4, fig.width=9>>=
+# Load plotly library
+library(plotly)
+
+# Create a ggplot object
+ggiris <- ggplot() + 
+  geom_point(data = iris, 
+             aes(x=Petal.Width, y=Sepal.Length, 
+                 color = Species))
+
+# Turn plot into an interactive web element
+ggplotly(ggiris)
+@
+\end{frame}
+
+\subsection{}
+\begin{frame}[fragile]
+\frametitle{Why you should use ggplot2}
+\textbf{ggplot2} can be easily combined with \textbf{tidyr} and \textbf{dplyr} \\ \vspace{2ex}
+There is a big community and constant development of new features:
+\vspace{2ex}
+\begin{itemize}
+\item \textbf{ggpmisc} - Add labels of p-value, R2 or
+equation
+\item \textbf{ggsignif} - Add significance brackets to boxplot
+\item \textbf{ggeffects} - Marginal Effects with ggplot2
+\item \textbf{ggsci} - For scientific journal colour palettes
+\item \textbf{ggrepel} - Avoid overlapping plot labels
+\item \textbf{ggridges} - Create ridgeline plots
+\item \textbf{scatterpie} - Map with embedded pie charts
+\item \textbf{ggtree} - Visualization and annotation of phylogenetic trees
+\item \textbf{ggspatial} - Plotting spatial objects
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+
+\subsection{Exercise 6}
+\begin{frame}
+\frametitle{Do it yourself - Exercise 6}
+\begin{itemize}
+\item Plot barchart of the number of species per class and of the number of occurrences for the 10 least common species
+\item Plot species richness against latitude using different geoms
+\item Use faceting to split the previous plots by class
+\item Use patchwork to create individual plots for each class
+\item Adjust scale, coordinate system, labels and theme
+\item Plot boxplot of species richness against class and add significant differences (\textbf{ggsignif})
+\item Make nice map of species richness
+\item Play around with the data and be creative
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\section{Data analysis with dplyr}
+%------------------------------------------------
+
+\begin{frame}[fragile]
+\frametitle{Do anything}
+You can use \textbf{do()} to perform arbitrary computation, returning either a data frame or arbitrary objects which will be stored in a list. This is particularly useful when working with models. \\
+\vspace{2ex}
+You can fit models per group with \textbf{do()} and then flexibly extract components with either another \textbf{do()} or \textbf{summarise()}:
+<<warning=F, message=F, eval=F>>=
+# Run linear model for each group
+library(dplyr)
+models <- mtcars %>% group_by(cyl) %>% 
+  do(mod = lm(mpg ~ disp, data = .))
+
+# Extract coefficients of linear model
+models %>% do(data.frame(var = names(coef(.$mod)), 
+                         coef(summary(.$mod))))
+@
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{ANOVA}
+\textbf{do()} also works with ANOVAs. But, we need to convert the output into a tidy object using the \textbf{tidy} function of the \textbf{broom} package:
+
+<<message=F, warning=F, eval=F>>=
+# A simply ANOVA
+mtcars %>% do(broom::tidy(aov(mpg ~ vs * am * gear, data=.)))
+
+# ANOVA of two linear models for 3 cylinder classes
+mtcars %>% group_by(cyl) %>% do(
+  mod_linear = lm(mpg ~ disp, data = .),
+  mod_quad = lm(mpg ~ poly(disp, 2), data = .)) %>% 
+  do(aov = anova(.$mod_linear, .$mod_quad)) %>% 
+  rowwise %>% do(tidy(.$aov)) %>% tidyr::drop_na()
+@
+\textbf{broom} includes three functions, \textbf{tidy(), augment() and glance()}, which all return different model outputs as a data.frame.
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Models with ggplot2}
+You can use \textbf{geom\_smooth()} to create models and plot them:
+<<fig.width=7, fig.height=3, fig.path="figures/">>=
+mtcars %>% ggplot(aes(mpg, disp)) + geom_smooth(method="lm")
+@
+\end{frame}
+
+\subsection{Exercise 7}
+\begin{frame}
+\frametitle{Do it yourself - Exercise 7}
+\begin{itemize}
+\item Create linear model using \textbf{do()}, i.e. of species richness against latitude for each class
+\item Run and plot \textbf{lm} and \textbf{gam} using ggplot2, i.e. of species richness against latitude for each class
+\item Add equation of lm to plot using \textbf{ggpmisc}
+\item Run ANOVA, i.e. compare linear models of the different classes
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\section{raster data with stars}
+%------------------------------------------------
+
+\begin{frame}[fragile]
+\frametitle{stars - Read raster data}
+\centering
+    \begin{minipage}{0.4\textwidth}
+        \centering
+%Raster data are described\\ 
+%by a grid, \\
+%with one value per cell
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[scale=0.5]{figures/raster_data} % Left, bottom, right, top
+}
+\end{figure}
+\end{minipage}\hfill
+\begin{minipage}{0.6\textwidth}
+Raster data can be read with the \textbf{stars} or \\ 
+alternatively with the \textbf{raster} package:
+<<eval=F>>=
+library(stars)
+tif <- system.file("tif/L7_ETMs.tif", 
+                   package = "stars")
+tif <- read_stars(tif)
+@
+Raster data can be easily converted into a data.frame and then analysed using \textbf{tidyr} and \textbf{dplyr}:
+<<eval=F>>=
+df <- as.data.frame(tif)
+@
+\end{minipage}
+\end{frame}
+
+%------------------------------------------------
+\section{vector data with sf}
+%------------------------------------------------
+
+\begin{frame}[fragile]
+\frametitle{sf - Read vector data}
+Vector data can be point, line or polygon data:
+\begin{figure}
+\makebox[\textwidth]{
+\includegraphics[scale=0.6]{figures/vector_data}}
+\end{figure}
+Vector data can be read with the \textbf{sf} package or alternatively with the \textbf{rgdal} package:
+
+<<eval=F>>=
+library(sf)
+nc <- system.file("shape/nc.shp", package = "sf")
+nc <- sf::st_read(nc)
+@
+
+And can be plotted with ggplot2 using \textbf{geom\_sf()}:
+
+<<eval=F>>=
+nc %>% ggplot() + geom_sf()
+@
+
+\end{frame}
+
+%%%
+%% Add plot with scale bar
+%%%
+
+\subsection{Exercise 8}
+\begin{frame}
+\frametitle{Do it yourself - Exercise 8}
+\begin{itemize}
+\item Install the \textbf{stars} and \textbf{sf} package
+\item Read tas\_ewembi\_deu\_1981\_2010.nc data into R using \textbf{read\_ncdf()}
+\item Create date column and split date into day, month and year
+\item Create polar plot of mean daily temperature split by years
+\item Plot map of 30-year average temperature, read gadm36\_DEU\_adm1.shp into R and add polygon of Germany to map
+\item Calculate monthly mean temperature across years, calculate a linear model for each grid cell, plot map of slope and R2 and add scale bar using \textbf{ggspatial}
+\item Join 30-year average temperature with species data and look at the relationship between richness and temperature per class
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\section{Thank you for your attention!}
+%------------------------------------------------
+
+\end{document}
